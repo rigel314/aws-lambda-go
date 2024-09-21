@@ -27,6 +27,10 @@ func unixMS(ms int64) time.Time {
 	return time.Unix(ms/msPerS, (ms%msPerS)*nsPerMS)
 }
 
+type ctxkey int
+
+var Chankey ctxkey
+
 // startRuntimeAPILoop will return an error if handling a particular invoke resulted in a non-recoverable error
 func startRuntimeAPILoop(api string, handler Handler) error {
 	client := newRuntimeAPIClient(api)
@@ -38,6 +42,13 @@ func startRuntimeAPILoop(api string, handler Handler) error {
 		}
 		if err = handleInvoke(invoke, h); err != nil {
 			return err
+		}
+		if chp, ok := h.baseContext.Value(Chankey).(*chan struct{}); ok && chp != nil {
+			select {
+			case <-*chp:
+			case <-time.After(time.Second * 10):
+			}
+			*chp = nil
 		}
 	}
 }
