@@ -66,6 +66,7 @@ func StartHandler(handler Handler) {
 
 // StartWithOptions is the same as Start after the application of any handler options specified
 func StartWithOptions(handler interface{}, options ...Option) {
+	log.Println("before start")
 	start(newHandler(handler, options...))
 }
 

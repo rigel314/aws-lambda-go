@@ -36,17 +36,24 @@ func startRuntimeAPILoop(api string, handler Handler) error {
 	client := newRuntimeAPIClient(api)
 	h := newHandler(handler)
 	for {
+		log.Println("before next")
 		invoke, err := client.next()
 		if err != nil {
 			return err
 		}
+		log.Println("before invoke")
 		if err = handleInvoke(invoke, h); err != nil {
 			return err
 		}
-		if chp, ok := h.baseContext.Value(Chankey).(*chan struct{}); ok && chp != nil {
+
+		chp, ok := h.baseContext.Value(Chankey).(**chan struct{})
+		log.Println(chp, ok)
+		if ok && chp != nil && *chp != nil {
 			select {
-			case <-*chp:
+			case <-**chp:
+				log.Println("worked")
 			case <-time.After(time.Second * 10):
+				log.Println("timeout")
 			}
 			*chp = nil
 		}
